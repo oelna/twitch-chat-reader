@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Twitch Chat Display</title>
+		
+		<style>
+			* { box-sizing: border-box; }
+			html {
+				font: 125%/1.25 'KievitOT', system-ui, sans-serif;
+				font-weight: 500;
+				font-style: normal;
+			}
+
+			body {
+				margin: 0;
+				min-height: 100vh;
+				overflow: hidden;
+				display: flex;
+				align-items: flex-end;
+
+				mask-image: linear-gradient(to top, black 90%, transparent);
+			}
+
+			#chat {
+				display: table;
+				table-layout: fixed;
+				width: 100%;
+				position: absolute;
+				bottom: 0;
+			}
+
+			#chat > div {
+				display: table-row;
+				opacity: 1;
+				transition: opacity 1s;
+			}
+
+			#chat > div > * {
+				outline: 0px solid #f0f;
+				padding: 0.5em;
+			}
+
+			#chat .name {
+				display: table-cell;
+				width: 40%;
+				max-width: 14ch;
+				text-align: right;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				overflow: hidden;
+			}
+
+			#chat .message {
+				display: table-cell;
+				word-wrap: break-word;
+			}
+
+			#chat .emoticon {
+				display: inline-block;
+				width: 1.4em;
+				height: 1.4em;
+				vertical-align: -20%;
+				object-fit: contain;
+			}
+
+			.badges {
+				display: inline-flex;
+				gap: 0.2em;
+				margin-right: 0.2em;
+				vertical-align: -13%;
+			}
+
+			.badge {
+				display: inline-block;
+				width: 1em;
+				height: 1em;
+			}
+
+			.badge img {
+				display: block;
+				width: 100%;
+				height: auto;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="chat">
+			<!--<div class="line">
+				<div class="name">x</div>
+				<div class="message">y</div>
+			</div>-->
+		</div>
+
+		<script src="./tmi.min.js"></script>
+		<script>
+			/* CONFIG */
+
+			const channel = 'oelna81'; // the channel to read
+			const ignoreUsers = ['nightbot', 'streamelements'];
+			const hideAfter = 90; // hide messages after X seconds
+
+			/* END CONFIG */
+
+			// load badges
+			let badgeImages = [];
+			fetch('https://api.twitchinsights.net/v1/badges/global')
+				.then((response) => response.json())
+				.then(function (data) {
+					badgeImages = data.badges;
+					console.info('badge data loaded');
+				});
+			
+			//connect
+			const username = 'justinfan8' + Math.floor(Math.random()*99+1);
+			console.info('loggin in as', username);
+			client = new tmi.client({
+				'connection': {
+						'reconnect': true,
+						'secure': true
+				},
+				'identity': {
+						'username': username,
+						'password': ''
+				},
+				'channels': [channel]
+			});
+
+			// handle messages
+			client.on('message', function (channel, user, message, fromSelf) {
+
+				if (message.startsWith('!')) return false;
+				if (ignoreUsers.includes(user['username'])) return false;
+
+				const badges = getBadges(user);
+				const color = (user['color']) ? user['color'] : 'currentColor';
+				const msg = formatEmotes(message, user.emotes);
+
+				let line = '<div class="line" data-ts="'+user['tmi-sent-ts']+'">';
+				line += '<div class="name">';
+				line += badges;
+				line += '<span style="color:'+color+';">';
+				line += user['display-name'];
+				line += '</span>';
+				line += '</div>';
+				line += '<div class="message">'+msg+'</div>';
+				line += '</div>';
+
+				document.querySelector('#chat').insertAdjacentHTML('beforeend', line);
+			});
+			client.connect();
+
+			// periodically hide old messages
+			setInterval(function () {
+				const now = Date.now();
+
+				document.querySelectorAll('#chat .line').forEach(function (ele, i) {
+					const ts = parseInt(ele.getAttribute('data-ts'));
+					if (now > (ts+hideAfter*1000)) {
+						ele.style.opacity = '0'; // fade out
+						setTimeout(function (line) { // finally remove element
+							line.remove();
+						}, 5000, ele);
+					}
+				});
+			}, 2000);
+
+			function getBadges(user) {
+				let bdg = '';
+				if (badgeImages.length > 0) {
+					for (const [key, value] of Object.entries(user['badges'])) {
+						const badgeData = badgeImages.find(function (o) {
+							return o.setID === key;
+						});
+						const url = badgeData.imageURL.slice(0,-2) + '/3';
+
+						bdg += '<span class="badge badge-'+key+'" data-v="'+value+'"><img src="'+url+'" /></span>';
+					}
+				}
+
+				return '<span class="badges">'+bdg+'</span>';
+			}
+
+			// https://gist.github.com/AlcaDesign/742d8cb82e3e93ad4205
+			function formatEmotes(text, emotes) {
+				var splitText = text.split('');
+				for(var i in emotes) {
+					var e = emotes[i];
+					for(var j in e) {
+						var mote = e[j];
+						if(typeof mote == 'string') {
+							mote = mote.split('-');
+							mote = [parseInt(mote[0]), parseInt(mote[1])];
+							var length =  mote[1] - mote[0],
+								empty = Array.apply(null, new Array(length + 1)).map(function() { return '' });
+							splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1, splitText.length));
+							splitText.splice(mote[0], 1, '<img class="emoticon" src="http://static-cdn.jtvnw.net/emoticons/v1/' + i + '/3.0">');
+						}
+					}
+				}
+				return htmlEntities(splitText).join('')
+			}
+
+			function htmlEntities(html) {
+				function it() {
+					return html.map(function(n, i, arr) {
+							if(n.length == 1) {
+								return n.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+										 return '&#'+i.charCodeAt(0)+';';
+									});
+							}
+							return n;
+						});
+				}
+				var isArray = Array.isArray(html);
+				if(!isArray) {
+					html = html.split('');
+				}
+				html = it(html);
+				if(!isArray) html = html.join('');
+				return html;
+			}
+
+		</script>
+	</body>
+</html>
