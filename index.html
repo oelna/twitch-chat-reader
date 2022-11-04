@@ -96,7 +96,7 @@
 		<script>
 			/* CONFIG */
 
-			const channel = 'oelna81'; // the channel to read
+			const channel = 'amaz'; // the channel to read
 			const ignoreUsers = ['nightbot', 'streamelements'];
 			const hideAfter = 90; // hide messages after X seconds
 
@@ -112,7 +112,7 @@
 				});
 			
 			//connect
-			const username = 'justinfan8' + Math.floor(Math.random()*99+1);
+			const username = 'justinfan' + Math.floor(Math.random()*998+1);
 			console.info('loggin in as', username);
 			client = new tmi.client({
 				'connection': {
@@ -127,6 +127,7 @@
 			});
 
 			// handle messages
+			const chatEle = document.querySelector('#chat');
 			client.on('message', function (channel, user, message, fromSelf) {
 
 				if (message.startsWith('!')) return false;
@@ -146,7 +147,7 @@
 				line += '<div class="message">'+msg+'</div>';
 				line += '</div>';
 
-				document.querySelector('#chat').insertAdjacentHTML('beforeend', line);
+				chatEle.insertAdjacentHTML('beforeend', line);
 			});
 			client.connect();
 
@@ -167,7 +168,7 @@
 
 			function getBadges(user) {
 				let bdg = '';
-				if (badgeImages.length > 0) {
+				if (user['badges'] && badgeImages.length > 0) {
 					for (const [key, value] of Object.entries(user['badges'])) {
 						const badgeData = badgeImages.find(function (o) {
 							return o.setID === key;
