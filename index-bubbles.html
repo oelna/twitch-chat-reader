@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Twitch Chat Display</title>
+
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		
+		<style>
+			@keyframes grow {
+				0% {
+					transform: scale(0%);
+				}
+				75% {
+					transform: scale(102%);
+				}
+				100% {
+					transform: scale(100%);
+				}
+			}
+
+			* { box-sizing: border-box; }
+			html {
+				font: 125%/1.25 system-ui, sans-serif;
+				font-weight: 400;
+				font-style: normal;
+				
+			}
+
+			html.error {
+				background-color: red;
+			}
+
+			body {
+				margin: 0;
+				padding-inline: 1rem;
+				min-height: 100vh;
+				overflow: hidden;
+				display: flex;
+				align-items: flex-end;
+
+				/* background: linear-gradient(to top, black 0%, #444 92%, #fff 98%); */
+				-webkit-mask-image: linear-gradient(to top, #000f 40%, #000d 98%, #0000 99.5%);
+				mask-image: linear-gradient(to top, #000f 40%, #000d 98%, #0000 99.5%);
+			}
+
+			#chat {
+				outline: 0px solid red;
+				width: calc(100% - 2rem);
+				position: absolute;
+				bottom: 1rem;
+			}
+
+			#chat > div {
+				width: 60%;
+				outline: 0px solid #0f0;
+				opacity: 1;
+				transition: opacity 1s;
+				transform-origin: bottom left;
+				margin-top: 0.6rem;
+
+				display: flex;
+				flex-direction: column;
+
+				animation: 0.5s grow forwards;
+				animation-timing-function: cubic-bezier(0.28, 0.05, 0.22, 1.16);
+			}
+
+			#chat .line.recent {
+				margin-top: 0.1rem;
+			}
+
+			#chat > div.right {
+				margin-left: auto;
+				transform-origin: bottom right;
+			}
+
+			#chat > div > * {
+				outline: 0px solid #f0f;
+				padding: 0.25em;
+			}
+
+			#chat .name {
+				padding-left: 1.0rem;
+				font-size: 0.8em;
+				font-weight: 600;
+				color: #888;
+				text-align: left;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+				overflow: hidden;
+
+				filter: saturate(0%);
+				opacity: 1;
+
+				/* text-shadow: 1px 1px 1px #fff5; */
+			}
+
+			#chat .line.same-user .name {
+				display: none;
+			}
+
+			#chat .line.recent.same-user .name {
+				display: none;
+			}
+
+			#chat .line.same-user.long-break .name {
+				display: block;
+			}
+
+			#chat .line.same-user.long-break .name time {
+				margin-left: 0;
+			}
+
+			#chat .line.long-break.same-user .name span {
+				display: none;
+			}
+
+			#chat .right .name {
+				align-self: end;
+				padding-left: 0;
+				padding-right: 1.0rem;
+			}
+
+			#chat .name time {
+				margin-left: 0.5rem;
+				font-weight: 450;
+			}
+
+			#chat .message {
+				display: inline-block;
+				background: #ddd;
+				background: linear-gradient(to top, #ddd 40%, #ebebeb);
+				word-wrap: break-word;
+				border-radius: 1rem;
+				padding: 0.4em 1.0em 0.5em;
+				color: #444;
+				align-self: start;
+				position: relative;
+			}
+
+			@supports (background: paint(id)) {
+				##chat .message {
+					-webkit-mask-image: paint(squircle);
+					mask-image: paint(squircle);
+					border-radius: 0;
+
+					--squircle-smooth: 1;
+				}
+			}
+
+			#chat .right .message {
+				align-self: end;
+				background: #007aff;
+				background: linear-gradient(to top, #007aff 40%, rgb(72, 181, 226));
+				color: #fff;
+			}
+
+			#chat .message::before {
+				content: "";
+				display: block;
+				/* background: #ddd; */
+				background-image: url(./corner-left.svg);
+				background-size: contain;
+				background-repeat: no-repeat;
+				transform: scaleX(-1);
+				width: 1.2rem;
+				height: 1.2rem;
+				position: absolute;
+				bottom: 0;
+				left: -0.6rem;
+				z-index: -100;
+			}
+
+			#chat .right .message::before {
+				background-image: url(./corner-right.svg);
+				transform: unset;
+				left: unset;
+				right: -0.6rem;
+			}
+
+			#chat .emoticon {
+				display: inline-block;
+				width: 1.4em;
+				height: 1.4em;
+				vertical-align: -20%;
+				object-fit: contain;
+			}
+
+			.badges {
+				display: inline-flex;
+				gap: 0.25em;
+				margin-right: 0.25em;
+				vertical-align: -6%;
+
+				opacity: 0.5;
+			}
+
+			.badge {
+				display: inline-block;
+				width: 0.8em;
+				height: 0.8em;
+			}
+
+			.badge img {
+				display: block;
+				width: 100%;
+				height: auto;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="chat">
+			<div class="line demo">
+				<div class="name">John Appleseed<time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo same-user recent">
+				<div class="name">John Appleseed<time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo same-user">
+				<div class="name">John Appleseed<time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo same-user long-break">
+				<div class="name"><span>John Appleseed</span><time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo">
+				<div class="name"><span>Hans Dampf</span><time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo long-break same-user">
+				<div class="name"><span>Hans Dampf</span><time>15:28</time></div>
+				<div class="message">My name is Ozymandias, king of kings: Look on my works, ye Mighty, and despair!</div>
+			</div>
+			<div class="line demo right">
+				<div class="name"><span>Ozzy</span><time>15:28</time></div>
+				<div class="message">I met a traveller</div>
+			</div>
+			<div class="line demo right long-break">
+				<div class="name"><span>Herbert</span><time>15:29</time></div>
+				<div class="message">I met a traveller</div>
+			</div>
+			<div class="line demo right long-break same-user">
+				<div class="name"><span>Herbert</span><time>15:45</time></div>
+				<div class="message">I met a traveller</div>
+			</div>
+		</div>
+
+		<script src="./tmi.min.js"></script>
+		<script>
+			/* CONFIG */
+
+			const channel = 'oelna81'; // the channel to read
+			const ignoreUsers = ['nightbot', 'streamelements', 'oelnabot'];
+			const blueBubble = [channel]; // users to highlight with blue bubbles
+			const hideAfter = 60*5; // hide messages after X seconds
+			const recentTimeout = 12;
+			const showDemoEntries = false;
+
+			let previousMessage;
+			let client;
+
+			/* END CONFIG */
+
+			// load badges
+			let badgeImages = [];
+			fetch('https://api.twitchinsights.net/v1/badges/global')
+				.then((response) => response.json())
+				.then(function (data) {
+					badgeImages = data.badges;
+					console.info('badge data loaded');
+				});
+
+			async function init () {
+
+				//connect
+				let username = 'justinfan' + Math.floor(Math.random()*998+1);
+				let password = '';
+
+				console.info('loggin in as', username);
+				client = new tmi.client({
+					'connection': {
+							'reconnect': true,
+							'secure': true,
+							// 'server': 'irc.fdgt.dev'
+					},
+					'identity': {
+							'username': username,
+							'password': password
+					},
+					'channels': [channel],
+					'options': {
+						'debug': false
+					},
+				});
+
+				// handle messages
+				const chatEle = document.querySelector('#chat');
+				client.on('message', function (channel, user, message, fromSelf) {
+
+					if (message.startsWith('!')) return false;
+					if (ignoreUsers.includes(user['username'])) return false;
+
+					const now = new Date(parseInt(user['tmi-sent-ts']));
+					const hours = now.getHours();
+					const minutes = now.getMinutes().toString().padStart(2, '0');
+
+					const badges = getBadges(user);
+					const color = (user['color']) ? user['color'] : 'currentColor';
+					const msg = formatEmotes(message, user.emotes);
+
+					const side = blueBubble.includes(user['username']) ? 'right' : 'left';
+
+					let sameUser = false;
+					let isRecent = false;
+					let longAgo = false;
+					if (previousMessage) {
+						console.log(previousMessage);
+
+						if (previousMessage.user['username'] == user['username']) {
+							console.log('message from the same user');
+							sameUser = true;
+						}
+
+						const lastTime = new Date(parseInt(previousMessage.user['tmi-sent-ts']));
+						if (Math.abs(now-lastTime) < recentTimeout*1000) {
+							console.log('message is recent');
+							isRecent = true;
+						}
+
+						if (Math.abs(now-lastTime) > 60*1000) {
+							console.log('message is from long ago');
+							longAgo = true;
+						}
+					}
+
+					let line = '<div class="line '+side+' '+(isRecent ? 'recent' : '')+' '+(sameUser ? 'same-user' : '')+' '+(longAgo ? 'long-break' : '')+'" data-ts="'+user['tmi-sent-ts']+'">';
+					line += '<div class="name">';
+					line += badges;
+					// line += '<span style="color:'+color+';">';
+					line += '<span>';
+					line += user['display-name'];
+					line += '</span>';
+					line += '<time>' + hours + ':' + minutes + '</time>';
+					
+					line += '</div>';
+					line += '<div class="message">'+msg+'</div>';
+					line += '</div>';
+
+					chatEle.insertAdjacentHTML('beforeend', line);
+
+					previousMessage = {
+						'channel': channel, 
+						'user': user, 
+						'message': message, 
+						'fromSelf': fromSelf
+					}
+				});
+				client.connect()
+					.then(function (e) {
+						console.log('Connection successful.', client);
+					})
+					.catch(function (e) {
+						console.log('Disconnected. Reason:', e);
+						document.documentElement.classList.add('error');
+					});
+			}
+
+			init();
+
+			// periodically hide old messages
+			setInterval(function () {
+				const now = Date.now();
+
+				document.querySelectorAll('#chat .line').forEach(function (ele, i) {
+					const ts = parseInt(ele.getAttribute('data-ts'));
+					if (now > (ts+hideAfter*1000)) {
+						ele.style.opacity = '0'; // fade out
+						setTimeout(function (line) { // finally remove element
+							line.remove();
+						}, 5000, ele);
+					}
+				});
+			}, 2000);
+
+			// hide demo entries
+			if (!showDemoEntries) {
+				setTimeout(function (line) {
+					document.querySelectorAll('#chat .line.demo').forEach(function (ele, i) {
+						console.log(this, ele)
+						ele.remove();
+					});
+				}, 5000);
+			}
+
+			function getBadges(user) {
+				let bdg = '';
+				if (user['badges'] && badgeImages.length > 0) {
+					for (const [key, value] of Object.entries(user['badges'])) {
+						const badgeData = badgeImages.find(function (o) {
+							return o.setID === key;
+						});
+						const url = badgeData.imageURL.slice(0,-2) + '/3';
+
+						bdg += '<span class="badge badge-'+key+'" data-v="'+value+'"><img src="'+url+'" /></span>';
+					}
+				}
+
+				return '<span class="badges">'+bdg+'</span>';
+			}
+
+			// https://gist.github.com/AlcaDesign/742d8cb82e3e93ad4205
+			function formatEmotes(text, emotes) {
+				var splitText = text.split('');
+				for(var i in emotes) {
+					var e = emotes[i];
+					for(var j in e) {
+						var mote = e[j];
+						if(typeof mote == 'string') {
+							mote = mote.split('-');
+							mote = [parseInt(mote[0]), parseInt(mote[1])];
+							var length =  mote[1] - mote[0],
+								empty = Array.apply(null, new Array(length + 1)).map(function() { return '' });
+							splitText = splitText.slice(0, mote[0]).concat(empty).concat(splitText.slice(mote[1] + 1, splitText.length));
+							splitText.splice(mote[0], 1, '<img class="emoticon" src="http://static-cdn.jtvnw.net/emoticons/v1/' + i + '/3.0">');
+						}
+					}
+				}
+				return htmlEntities(splitText).join('')
+			}
+
+			function htmlEntities(html) {
+				function it() {
+					return html.map(function(n, i, arr) {
+							if(n.length == 1) {
+								return n.replace(/[\u00A0-\u9999<>\&]/gim, function(i) {
+										 return '&#'+i.charCodeAt(0)+';';
+									});
+							}
+							return n;
+						});
+				}
+				var isArray = Array.isArray(html);
+				if(!isArray) {
+					html = html.split('');
+				}
+				html = it(html);
+				if(!isArray) html = html.join('');
+				return html;
+			}
+
+			// better rounded corners
+			if ('paintWorklet' in CSS) {
+				CSS.paintWorklet.addModule('./squircle.js');
+				document.documentElement.classList.add('css-paint');
+			}
+
+		</script>
+	</body>
+</html>
