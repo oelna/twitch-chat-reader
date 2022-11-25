@@ -4,7 +4,8 @@ A mostly self-contained client to Twitch chat, use as OBS overlay.
 
 This uses `justinfan+number` as a way to read chat without auth. Also, it loads badge data from [twitchinsights.net](https://twitchinsights.net/badges), so that may break in the future. Use at your own peril.
 
-[Demo](https://oelna.github.io/twitch-chat-reader/) (uses channel [twitch.tv/amaz](https://www.twitch.tv/amaz), on at 4pm CET)
+[Demo](https://oelna.github.io/twitch-chat-reader/) (uses channel [twitch.tv/amaz](https://www.twitch.tv/amaz), on at 4pm CET)  
+[Demo 2](https://oelna.github.io/twitch-chat-reader/index-bubbles.html) (iMessage-style bubbles) (also [twitch.tv/amaz](https://www.twitch.tv/amaz))
 
 ## Instructions
 
