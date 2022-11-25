@@ -319,21 +319,17 @@
 					let isRecent = false;
 					let longAgo = false;
 					if (previousMessage) {
-						console.log(previousMessage);
 
 						if (previousMessage.user['username'] == user['username']) {
-							console.log('message from the same user');
 							sameUser = true;
 						}
 
 						const lastTime = new Date(parseInt(previousMessage.user['tmi-sent-ts']));
 						if (Math.abs(now-lastTime) < recentTimeout*1000) {
-							console.log('message is recent');
 							isRecent = true;
 						}
 
 						if (Math.abs(now-lastTime) > 60*1000) {
-							console.log('message is from long ago');
 							longAgo = true;
 						}
 					}
