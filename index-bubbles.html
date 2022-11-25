@@ -343,7 +343,7 @@
 						}
 					}
 
-					let line = '<div class="line '+side+' '+(isRecent ? 'recent' : '')+' '+(sameUser ? 'same-user' : '')+' '+(longAgo ? 'long-break' : '')+'" data-ts="'+user['tmi-sent-ts']+'">';
+					let line = '<div class="line '+side+' '+(isRecent ? 'recent' : '')+' '+(sameUser ? 'same-user' : '')+' '+(longAgo ? 'long-break' : '')+' '+(isSameMinute ? 'same-minute' : '')+'" data-ts="'+user['tmi-sent-ts']+'">';
 					line += '<div class="name">';
 					line += badges;
 					// line += '<span style="color:'+color+';">';
