@@ -111,6 +111,10 @@
 			#chat .line.same-user.long-break .name time {
 				margin-left: 0;
 			}
+			
+			#chat .line.same-minute .name time {
+				display: none;
+			}
 
 			#chat .line.long-break.same-user .name span {
 				display: none;
@@ -317,6 +321,7 @@
 
 					let sameUser = false;
 					let isRecent = false;
+					let isSameMinute = false;
 					let longAgo = false;
 					if (previousMessage) {
 
@@ -331,6 +336,10 @@
 
 						if (Math.abs(now-lastTime) > 60*1000) {
 							longAgo = true;
+						}
+						
+						if (now.getMinutes() == lastTime.getMinutes()) {
+							isSameMinute = true;
 						}
 					}
 
@@ -387,7 +396,6 @@
 			if (!showDemoEntries) {
 				setTimeout(function (line) {
 					document.querySelectorAll('#chat .line.demo').forEach(function (ele, i) {
-						console.log(this, ele)
 						ele.remove();
 					});
 				}, 5000);
